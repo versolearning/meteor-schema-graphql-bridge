@@ -1,7 +1,7 @@
 {
   "name": "meteor-schema-graphql-bridge-verso",
   "repository": "versolearning/meteor-schema-graphql-bridge",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Simple Schema - GraphQL Schema Bridge",
   "author": "Phuc Nguyen <npm@phucnguyen.info>",
   "license": "MIT",
