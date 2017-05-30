@@ -13,35 +13,41 @@ const typeNamesToModify = [
 ];
 
 const SchemaBridge = {
-  schema: (schema, name, { fields, except, custom, wrap=true, interfacePrefix }={}) => {
+  schema: (schema, name, { fields, except, custom, wrap=true, interfacePrefix, isInputType }={}) => {
     const S = schema._schema;
     let keys, content, objs;
 
     // Get field definitions for the main type
     keys = getFields({schema, fields, except});
     content = keys.keys.map(k => {
-      return getFieldSchema(schema, k, name, custom, interfacePrefix);
+      return getFieldSchema(schema, k, name, custom, interfacePrefix, isInputType);
     });
     content = content.reduce((a,b) => `${a}${b}`);
 
     // Add the _id field
     content = `
-      _id: GraphQLMeteorId!
+      _id: GraphQLMeteorId${isInputType ? '' : '!'}
       ${content}
     `;
 
     // Get type definitions for the contained objects
     objs = keys.objectKeys.map(k => {
-      return getObjectSchema(schema, k, name, custom, interfacePrefix);
+      return getObjectSchema(schema, k, name, custom, interfacePrefix, isInputType);
     });
     objs = objs.length ? (objs.reduce((a,b) => `${a}${b}`)) : '';
 
     if(!wrap)
       return { objects: objs, subObjectTypes: objs, fields: content};
 
+    let typeDefinition;
+    if (isInputType)
+      typeDefinition = 'input';
+    else
+      typeDefinition = 'type'
+
     return `
       ${objs}
-      type ${name} {
+      ${typeDefinition} ${name} {
         ${content}
       }
     `;
@@ -115,7 +121,7 @@ const camel = k => k[0].toUpperCase() + k.substr(1);
 const typeName = (key, name) => name + (key.split('.').reduce((a,b) => a+camel(b), ''));
 
 // Get field key definition
-const getFieldSchema = (schema, k, name, custom = {}, interfacePrefix) => {
+const getFieldSchema = (schema, k, name, custom = {}, interfacePrefix, isInputType) => {
   const S = schema._schema;
   const field = S[k];
   let key = k.substr(k.lastIndexOf(".") + 1), value = null;
@@ -170,14 +176,14 @@ const getFieldSchema = (schema, k, name, custom = {}, interfacePrefix) => {
   if (shouldRenameType)
     value = value.replace('Teacher', interfacePrefix).replace('Student', interfacePrefix);
 
-  if (!field.optional) value += "!";
+  if (!field.optional && !isInputType) value += "!";
 
   return `
     ${key}: ${value}`;
 };
 
 // Set a new GraphQL type definition
-const getObjectSchema = (schema, key, name, custom, interfacePrefix) => {
+const getObjectSchema = (schema, key, name, custom, interfacePrefix, isInputType) => {
   let splitter = schema._objectKeys[key + "."]
     ? "."
     : schema._objectKeys[key + ".$."] ? ".$." : null;
@@ -194,8 +200,14 @@ const getObjectSchema = (schema, key, name, custom, interfacePrefix) => {
   if (interfacePrefix && typeNamesToModify.includes(type))
     type = type.replace('Teacher', interfacePrefix).replace('Student', interfacePrefix);
 
+  let typeDefinition;
+  if (isInputType)
+    typeDefinition = 'input';
+  else
+    typeDefinition = 'type'
+
   return `
-  type ${type} {
+  ${typeDefinition} ${type} {
     ${content}
   }`;
 };
