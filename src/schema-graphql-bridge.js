@@ -173,8 +173,9 @@ const getFieldSchema = (schema, k, name, custom = {}, interfacePrefix, isInputTy
     return name === value || `[${name}]` === value;
   })
 
-  if (shouldRenameType)
+  if (shouldRenameType) {
     value = value.replace('Teacher', interfacePrefix).replace('Student', interfacePrefix);
+  }
 
   if (!field.optional && !isInputType) value += "!";
 
@@ -197,8 +198,10 @@ const getObjectSchema = (schema, key, name, custom, interfacePrefix, isInputType
 
   let type = typeName(key, name);
 
-  if (interfacePrefix && typeNamesToModify.includes(type))
-    type = type.replace('Teacher', interfacePrefix).replace('Student', interfacePrefix);
+  if (interfacePrefix && typeNamesToModify.includes(type)) {
+    // type = type.replace('Teacher', interfacePrefix).replace('Student', interfacePrefix);
+    type = type.replace('Teacher', interfacePrefix);
+  }
 
   let typeDefinition;
   if (isInputType)
